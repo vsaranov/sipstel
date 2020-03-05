@@ -41,7 +41,7 @@ uv_async_t logging;
 bool ep_init = false;
 bool ep_create = false;
 bool ep_start = false;
-EpConfig ep_cfg;
+EpConfig ep_cfg = {};
 
 list<SIPEventInfo> event_queue;
 uv_mutex_t event_mutex;
@@ -146,10 +146,22 @@ void dumb_cb(uv_async_t* handle) {
         SIPSTERAccount* acct = ev.acct;
         SIPSTERCall* call = ev.call;
         Local<Value> new_call_args[1] = { Nan::New<External>(call) };
-        Local<Object> call_obj;
-        call_obj = Nan::New(SIPSTERCall_constructor)
-                    ->GetFunction()
-                    ->NewInstance(1, new_call_args);
+//
+// https://github.com/nodejs/nan/blob/347fd3a313c6e65ce9fa8b9c1accea59b65c864c/test/cpp/wrappedobjectfactory.cpp
+// https://github.com/nodejs/nan/blob/347fd3a313c6e65ce9fa8b9c1accea59b65c864c/test/cpp/accessors.cpp
+//
+// https://github.com/nodejs/nan
+// https://github.com/v8/v8/wiki/Embedder%27s%20Guide
+// https://github.com/v8/v8/wiki/Getting%20Started%20with%20Embedding
+// https://v8docs.nodesource.com/io.js-2.5/d5/d54/classv8_1_1_function.html#a17b183d12e2daddbab7818db1d446fc6
+// https://v8docs.nodesource.com/io.js-3.3/d5/d54/classv8_1_1_function.html#a691b13f7a553069732cbacf5ac8c62ec
+// https://v8docs.nodesource.com/node-0.10/d5/d54/classv8_1_1_function.html#a1f3cf98f40edb201b0ebee025dd119e9
+// https://v8docs.nodesource.com/node-0.8/d8/d83/classv8_1_1_function_template.html#a8164c5ebc053deec859b1ecef47bfbac
+//
+        v8::Local<v8::Function> cons
+          = Nan::New(SIPSTERCall_constructor)->GetFunction();
+        Local<Object> call_obj
+          = Nan::NewInstance(cons, 1, new_call_args).ToLocalChecked();
         Local<Value> emit_argv[3] = {
           Nan::New(ev_INCALL_call_symbol),
           obj,
@@ -234,10 +246,10 @@ void dumb_cb(uv_async_t* handle) {
           for (unsigned i = 0, m = 0; i < ci.media.size(); ++i) {
             if (ci.media[i].type == PJMEDIA_TYPE_AUDIO
                 && (media = static_cast<AudioMedia*>(call->getMedia(i)))) {
-              Local<Object> med_obj;
-              med_obj = Nan::New(SIPSTERMedia_constructor)
-                          ->GetFunction()
-                          ->NewInstance(0, NULL);
+              v8::Local<v8::Function> cons
+                = Nan::New(SIPSTERMedia_constructor)->GetFunction();
+              Local<Object> med_obj
+                = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
               SIPSTERMedia* med =
                 Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
               med->media = media;
@@ -426,10 +438,10 @@ static NAN_METHOD(CreateRecorder) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Function> cons
+    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
+  Local<Object> med_obj
+    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = recorder;
   med->is_media_new = true;
@@ -459,10 +471,10 @@ static NAN_METHOD(CreatePlayer) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Function> cons
+    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
+  Local<Object> med_obj
+    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;
@@ -503,10 +515,10 @@ static NAN_METHOD(CreatePlaylist) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Function> cons
+    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
+  Local<Object> med_obj
+    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;

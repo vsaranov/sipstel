@@ -1,0 +1,19 @@
+version: '3'
+services:
+  sipster10:
+    build:
+      context: ../../
+      args:
+        - NODEJS=10
+  sipster9:
+    build:
+      context: ../../
+      args:
+        - NODEJS=9
+  sipster8:
+    build:
+      context: ../../
+      args:
+        - NODEJS=8
+#    volumes:
+#      - ../../:/root/sipster/

@@ -1,14 +1,45 @@
-{ "name": "sipster",
+{
+  "name": "sipster",
   "version": "0.1.0",
   "author": "Brian White <mscdex@mscdex.net>",
   "description": "A pjsip binding for node.js",
   "main": "./lib/main",
   "dependencies": {
-    "nan": "^2.0.9"
+    "nan": "^2.10.0"
   },
-  "os" : [ "!win32" ],
-  "engines": { "node": ">=0.10.0" },
-  "keywords": [ "sip", "pjsip" ],
-  "licenses": [ { "type": "MIT", "url": "http://github.com/mscdex/sipster/raw/master/LICENSE" } ],
-  "repository": { "type": "git", "url": "http://github.com/mscdex/sipster.git" }
+  "os": [
+    "!win32"
+  ],
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "keywords": [
+    "sip",
+    "pjsip"
+  ],
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://github.com/mscdex/sipster/raw/master/LICENSE"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/mscdex/sipster.git"
+  },
+  "scripts": {
+    "test": "jest --forceExit"
+  },
+  "devDependencies": {
+    "jest": "^22.4.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "testEnvironment": "node"
+  }
 }

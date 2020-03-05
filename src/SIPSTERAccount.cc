@@ -27,7 +27,7 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
   val = acct_obj->Get(Nan::New("regConfig").ToLocalChecked());
   if (val->IsObject()) {
-    AccountRegConfig regConfig;
+    AccountRegConfig regConfig = {};
     Local<Object> reg_obj = val->ToObject();
     JS2PJ_STR(reg_obj, registrarUri, regConfig);
     JS2PJ_BOOL(reg_obj, registerOnAdd, regConfig);
@@ -65,7 +65,7 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
   }
   val = acct_obj->Get(Nan::New("sipConfig").ToLocalChecked());
   if (val->IsObject()) {
-    AccountSipConfig sipConfig;
+    AccountSipConfig sipConfig = {};
     Local<Object> sip_obj = val->ToObject();
 
     val = sip_obj->Get(Nan::New("authCreds").ToLocalChecked());
@@ -136,7 +136,8 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
       SIPSTERTransport* trans =
         Nan::ObjectWrap::Unwrap<SIPSTERTransport>(Local<Object>::Cast(val));
       sipConfig.transportId = trans->transId;
-    }
+    } else
+        sipConfig.transportId = -1;
 
     acct_cfg.sipConfig = sipConfig;
   }
@@ -599,9 +600,10 @@ NAN_METHOD(SIPSTERAccount::MakeCall) {
     return Nan::ThrowTypeError("Missing call destination");
 
   Handle<Value> new_call_args[1] = { info.This() };
-  Local<Object> call_obj =
-    Nan::New(SIPSTERCall_constructor)->GetFunction()
-                                     ->NewInstance(1, new_call_args);
+  v8::Local<v8::Function> cons
+    = Nan::New(SIPSTERCall_constructor)->GetFunction();
+  Local<Object> call_obj
+    = Nan::NewInstance(cons, 1, new_call_args).ToLocalChecked();
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(call_obj);
 
   try {

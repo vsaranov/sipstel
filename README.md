@@ -1,4 +1,4 @@
-Description
+Description  [![Build Status](https://travis-ci.org/minoruta/sipster.svg?branch=for-sipster-ts)](https://travis-ci.org/minoruta/sipster)
 ===========
 
 A [pjsip](http://www.pjsip.org) (or more accurately a [pjsua2](http://www.pjsip.org/docs/book-latest/html/index.html)) binding for node.js.
