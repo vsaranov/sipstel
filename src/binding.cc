@@ -23,7 +23,7 @@
 
 using namespace std;
 using namespace node;
-using namespace v8;
+using namespace v12;
 using namespace pj;
 
 class SIPSTERLogWriter;
