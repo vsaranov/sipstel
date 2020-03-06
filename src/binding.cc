@@ -41,7 +41,7 @@ uv_async_t logging;
 bool ep_init = false;
 bool ep_create = false;
 bool ep_start = false;
-EpConfig ep_cfg = {};
+EpConfig ep_cfg;
 
 list<SIPEventInfo> event_queue;
 uv_mutex_t event_mutex;
@@ -146,22 +146,10 @@ void dumb_cb(uv_async_t* handle) {
         SIPSTERAccount* acct = ev.acct;
         SIPSTERCall* call = ev.call;
         Local<Value> new_call_args[1] = { Nan::New<External>(call) };
-//
-// https://github.com/nodejs/nan/blob/347fd3a313c6e65ce9fa8b9c1accea59b65c864c/test/cpp/wrappedobjectfactory.cpp
-// https://github.com/nodejs/nan/blob/347fd3a313c6e65ce9fa8b9c1accea59b65c864c/test/cpp/accessors.cpp
-//
-// https://github.com/nodejs/nan
-// https://github.com/v8/v8/wiki/Embedder%27s%20Guide
-// https://github.com/v8/v8/wiki/Getting%20Started%20with%20Embedding
-// https://v8docs.nodesource.com/io.js-2.5/d5/d54/classv8_1_1_function.html#a17b183d12e2daddbab7818db1d446fc6
-// https://v8docs.nodesource.com/io.js-3.3/d5/d54/classv8_1_1_function.html#a691b13f7a553069732cbacf5ac8c62ec
-// https://v8docs.nodesource.com/node-0.10/d5/d54/classv8_1_1_function.html#a1f3cf98f40edb201b0ebee025dd119e9
-// https://v8docs.nodesource.com/node-0.8/d8/d83/classv8_1_1_function_template.html#a8164c5ebc053deec859b1ecef47bfbac
-//
-        v8::Local<v8::Function> cons
-          = Nan::New(SIPSTERCall_constructor)->GetFunction();
-        Local<Object> call_obj
-          = Nan::NewInstance(cons, 1, new_call_args).ToLocalChecked();
+        Local<Object> call_obj;
+        call_obj = Nan::New(SIPSTERCall_constructor)
+                    ->GetFunction()
+                    ->NewInstance(1, new_call_args);
         Local<Value> emit_argv[3] = {
           Nan::New(ev_INCALL_call_symbol),
           obj,
@@ -246,10 +234,10 @@ void dumb_cb(uv_async_t* handle) {
           for (unsigned i = 0, m = 0; i < ci.media.size(); ++i) {
             if (ci.media[i].type == PJMEDIA_TYPE_AUDIO
                 && (media = static_cast<AudioMedia*>(call->getMedia(i)))) {
-              v8::Local<v8::Function> cons
-                = Nan::New(SIPSTERMedia_constructor)->GetFunction();
-              Local<Object> med_obj
-                = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
+              Local<Object> med_obj;
+              med_obj = Nan::New(SIPSTERMedia_constructor)
+                          ->GetFunction()
+                          ->NewInstance(0, NULL);
               SIPSTERMedia* med =
                 Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
               med->media = media;
@@ -438,10 +426,10 @@ static NAN_METHOD(CreateRecorder) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  v8::Local<v8::Function> cons
-    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
-  Local<Object> med_obj
-    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
+  Local<Object> med_obj;
+  med_obj = Nan::New(SIPSTERMedia_constructor)
+              ->GetFunction()
+              ->NewInstance(0, NULL);
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = recorder;
   med->is_media_new = true;
@@ -471,15 +459,48 @@ static NAN_METHOD(CreatePlayer) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  v8::Local<v8::Function> cons
-    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
-  Local<Object> med_obj
-    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
+  Local<Object> med_obj;
+  med_obj = Nan::New(SIPSTERMedia_constructor)
+              ->GetFunction()
+              ->NewInstance(0, NULL);
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;
   player->media = med;
   player->options = opts;
+
+  info.GetReturnValue().Set(med_obj);
+}
+
+static NAN_METHOD(EPGetPlaybackDevMedia) {
+  Nan::HandleScope scope;
+
+  AudioMedia& playbackMedia = ep->audDevManager().getPlaybackDevMedia();
+  Local<Object> med_obj;
+  med_obj = Nan::New(SIPSTERMedia_constructor)
+              ->GetFunction()
+              ->NewInstance(0, NULL);
+  SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
+
+  med->media = &playbackMedia;
+  med->is_media_new = true;
+
+  info.GetReturnValue().Set(med_obj);
+}
+static NAN_METHOD(EPGetCaptureDevMedia) {
+  Nan::HandleScope scope;
+
+  AudioMedia& captureMedia = ep->audDevManager().getCaptureDevMedia();
+
+  Local<Object> med_obj;
+  
+  med_obj = Nan::New(SIPSTERMedia_constructor)
+              ->GetFunction()
+              ->NewInstance(0, NULL);
+  
+  SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
+  med->media = &captureMedia;
+  med->is_media_new = true;
 
   info.GetReturnValue().Set(med_obj);
 }
@@ -515,10 +536,10 @@ static NAN_METHOD(CreatePlaylist) {
     return Nan::ThrowError(errstr.c_str());
   }
 
-  v8::Local<v8::Function> cons
-    = Nan::New(SIPSTERMedia_constructor)->GetFunction();
-  Local<Object> med_obj
-    = Nan::NewInstance(cons, 0, NULL).ToLocalChecked();
+  Local<Object> med_obj;
+  med_obj = Nan::New(SIPSTERMedia_constructor)
+              ->GetFunction()
+              ->NewInstance(0, NULL);
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;
@@ -698,8 +719,6 @@ static NAN_METHOD(EPInit) {
 
   uv_async_init(uv_default_loop(), &dumb, static_cast<uv_async_cb>(dumb_cb));
 
-  Endpoint::instance().audDevManager().setNullDev();
-
   if ((info.Length() == 1 && info[0]->IsBoolean() && info[0]->BooleanValue())
       || (info.Length() > 1
           && info[1]->IsBoolean()
@@ -734,7 +753,86 @@ static NAN_METHOD(EPStart) {
   }
   info.GetReturnValue().SetUndefined();
 }
+static NAN_METHOD(EPGetDevices) {
+  Nan::HandleScope scope;
+  AudioDevInfoVector  devices;
+  v8::Local<v8::Array> nodeDevices = v8::Local<v8::Array>(Nan::New<v8::Array>());
+  devices = ep->audDevManager().enumDev();
 
+  for(std::vector<int>::size_type i = 0; i != devices.size(); i++) {
+
+      v8::Local<v8::Object> item = Nan::New<v8::Object>();
+       Nan::Set(item, Nan::New<v8::String>("name").ToLocalChecked(),
+          Nan::New<v8::String>(devices[i]->name).ToLocalChecked());
+       Nan::Set(item, Nan::New<v8::String>("id").ToLocalChecked(),
+          Nan::New<v8::Uint32>(static_cast<uint32_t>(i)) );
+       Nan::Set(item, Nan::New<v8::String>("inputCount").ToLocalChecked(),
+          Nan::New<v8::Uint32>(devices[i]->inputCount));
+       Nan::Set(item, Nan::New<v8::String>("outputCount").ToLocalChecked(),
+          Nan::New<v8::Uint32>(devices[i]->outputCount));
+       Nan::Set(nodeDevices, static_cast<uint32_t>(i), item);
+    }
+
+    info.GetReturnValue().Set(nodeDevices);
+
+}
+static NAN_METHOD(EPSetCaptureDevice) {
+  Nan::HandleScope scope;
+  int deviceId = Nan::To<int32_t>(info[0]).FromJust();
+  ep->audDevManager().setCaptureDev(deviceId);
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPSetPlaybackDevice) {
+  Nan::HandleScope scope;
+  int deviceId = Nan::To<int32_t>(info[0]).FromJust();
+  ep->audDevManager().setPlaybackDev(deviceId);
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPSetNullDevice){
+  Nan::HandleScope scope;
+  ep->audDevManager().setNullDev();
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPSetInputVolume) {
+  Nan::HandleScope scope;
+
+  int volume = Nan::To<int32_t>(info[0]).FromJust();
+  ep->audDevManager().setInputVolume(volume);
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPSetOutputVolume) {
+  Nan::HandleScope scope;
+
+  int volume = Nan::To<int32_t>(info[0]).FromJust();
+  ep->audDevManager().setOutputVolume(volume);
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPGetInputVolume) {
+  Nan::HandleScope scope;
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(static_cast<uint32_t>(ep->audDevManager().getInputVolume())));
+}
+static NAN_METHOD(EPGetOutputVolume) {
+  Nan::HandleScope scope;
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(static_cast<uint32_t>(ep->audDevManager().getOutputVolume())));
+}
+static NAN_METHOD(EPGetPlaybackDevice) {
+  Nan::HandleScope scope;
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(static_cast<uint32_t>(ep->audDevManager().getPlaybackDev())));
+}
+static NAN_METHOD(EPGetCaptureDevice) {
+  Nan::HandleScope scope;
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(static_cast<uint32_t>(ep->audDevManager().getCaptureDev())));
+}
+static NAN_METHOD(EPSetAEC) {
+  Nan::HandleScope scope;
+  int ec = Nan::To<int32_t>(info[0]).FromJust();
+  ep->audDevManager().setEcOptions(ec,0);
+  info.GetReturnValue().SetUndefined();
+}
+static NAN_METHOD(EPGetAEC) {
+  Nan::HandleScope scope;
+  info.GetReturnValue().Set(Nan::New<v8::Uint32>(static_cast<uint32_t>( ep->audDevManager().getEcTail())));
+}
 static NAN_METHOD(EPGetConfig) {
   Nan::HandleScope scope;
   string errstr;
@@ -882,7 +980,48 @@ extern "C" {
     Nan::Set(target,
              Nan::New("mediaMaxPorts").ToLocalChecked(),
              Nan::New<FunctionTemplate>(EPMediaMaxPorts)->GetFunction());
-
+    Nan::Set(target,
+             Nan::New("getDevices").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetDevices)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setCaptureDev").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetCaptureDevice)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setNullDev").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetNullDevice)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setPlaybackDev").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetPlaybackDevice)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getCaptureDev").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetCaptureDevice)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getPlaybackDev").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetPlaybackDevice)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setInputVolume").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetInputVolume)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setOutputVolume").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetOutputVolume)->GetFunction());
+       Nan::Set(target,
+             Nan::New("getInputVolume").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetInputVolume)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getOutputVolume").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetOutputVolume)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getAECTail").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetAEC)->GetFunction());
+    Nan::Set(target,
+             Nan::New("setAECTail").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPSetAEC)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getPlaybackDevMedia").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetPlaybackDevMedia)->GetFunction());
+    Nan::Set(target,
+             Nan::New("getCaptureDevMedia").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPGetCaptureDevMedia)->GetFunction());
     Nan::Set(target,
              Nan::New("createRecorder").ToLocalChecked(),
              Nan::New<FunctionTemplate>(CreateRecorder)->GetFunction());
