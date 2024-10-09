@@ -1,7 +1,7 @@
 {
-  "name": "sipstertest",
+  "name": "sipstel",
   "version": "0.1.0",
-  "author": "Brian White <mscdex@mscdex.net>",
+  "author": "Brian White <mscdex@mscdex.net>, minoruta, iDerp, Vadim Saranov",
   "description": "A pjsip binding for node.js",
   "main": "./lib/main",
   "dependencies": {
@@ -15,17 +15,18 @@
   },
   "keywords": [
     "sip",
-    "pjsip"
+    "pjsip",
+    "sipster"
   ],
   "licenses": [
     {
       "type": "MIT",
-      "url": "http://github.com/mscdex/sipster/raw/master/LICENSE"
+      "url": "https://raw.githubusercontent.com/vsaranov/sipstel/master/LICENSE"
     }
   ],
   "repository": {
     "type": "git",
-    "url": "http://github.com/mscdex/sipster.git"
+    "url": "http://github.com/vsaranov/sipstel.git"
   },
   "scripts": {
     "test": "jest --forceExit"

@@ -1033,5 +1033,5 @@ extern "C" {
              Nan::New<FunctionTemplate>(CreatePlaylist)->GetFunction());
   }
 
-  NODE_MODULE(sipster, init);
+  NODE_MODULE(sipstel, init);
 }

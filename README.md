@@ -1,9 +1,10 @@
-Description  [![Build Status](https://travis-ci.org/minoruta/sipster.svg?branch=for-sipster-ts)](https://travis-ci.org/minoruta/sipster)
+Description
 ===========
 
 A [pjsip](http://www.pjsip.org) (or more accurately a [pjsua2](http://www.pjsip.org/docs/book-latest/html/index.html)) binding for node.js.
 
 Familiarity with pjsip/pjsua2 is a plus when using this binding.
+The 'sipstel' project is 'sipster' which is adapted for new versions of node.js and pjsip.
 
 
 Requirements
@@ -17,7 +18,7 @@ Requirements
 Install
 =======
 
-    npm install sipster
+    npm install sipstel
 
 
 Examples
@@ -26,17 +27,17 @@ Examples
 * UAS set up as a SIP trunk (no registration):
 
 ```javascript
-var sipster = require('sipster');
+var sipstel = require('sipstel');
 
 // initialize pjsip
-sipster.init();
+sipstel.init();
 
 // set up a transport to listen for incoming connections, defaults to UDP
-var transport = new sipster.Transport({ port: 5060 });
+var transport = new sipstel.Transport({ port: 5060 });
 
 // set up a SIP account, we need at least one -- as required by pjsip.
 // this sets up an account for calls coming from 192.168.100.10
-var acct = new sipster.Account({
+var acct = new sipstel.Account({
   idUri: 'sip:192.168.100.10'
 });
 
@@ -57,12 +58,12 @@ acct.on('call', function(info, call) {
   // audio stream(s) available
   call.on('media', function(medias) {
     // play looping .wav file to the first audio stream
-    var player = sipster.createPlayer('sound.wav');
+    var player = sipstel.createPlayer('sound.wav');
     player.startTransmitTo(medias[0]);
 
     // record the audio of the other side, this will not include the audio from
     // the player above.
-    var recorder = sipster.createRecorder('call.wav');
+    var recorder = sipstel.createRecorder('call.wav');
     medias[0].startTransmitTo(recorder);
     // to include the player audio, you can mix the sources together simply
     // by transmitting to the same recorder:
@@ -74,7 +75,7 @@ acct.on('call', function(info, call) {
 });
 
 // finalize the pjsip initialization phase ...
-sipster.start();
+sipstel.start();
 ```
 
 

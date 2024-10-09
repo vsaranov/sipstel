@@ -1,7 +1,7 @@
 {
   'targets': [
     {
-      'target_name': 'sipster',
+      'target_name': 'sipstel',
       'sources': [
         'src/binding.cc',
         'src/SIPSTERAccount.cc',

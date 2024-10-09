@@ -1,16 +1,16 @@
-FROM sipster-pjsip
+FROM sipstel-pjsip
 MAINTAINER KINOSHITA minoru <5021543+minoruta@users.noreply.github.com>
 
 ARG NODEJS=8
 
 WORKDIR /root
-RUN  mkdir sipster
-COPY src sipster/src
-COPY lib sipster/lib
-COPY test sipster/test
-COPY package.json sipster/
-COPY package-lock.json sipster/
-COPY binding.gyp sipster/
+RUN  mkdir sipstel
+COPY src sipstel/src
+COPY lib sipstel/lib
+COPY test sipstel/test
+COPY package.json sipstel/
+COPY package-lock.json sipstel/
+COPY binding.gyp sipstel/
 
 #
 #   Prepare requirments to test
@@ -30,14 +30,14 @@ RUN apt -qq update \
 #
 #   Prepare nodejs
 #
-RUN cd /root/sipster \
+RUN cd /root/sipstel \
 &&  npm -qq install -g node-gyp \
 &&  npm -qq install --unsafe-perm
 
 #
 #   Test
 #
-CMD cd /root/sipster \
+CMD cd /root/sipstel \
 &&  node --version \
 &&  ulimit -c unlimited \
 &&  npm test \
