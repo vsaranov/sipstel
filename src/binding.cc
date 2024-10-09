@@ -558,6 +558,27 @@ static NAN_METHOD(CreatePlaylist) {
   info.GetReturnValue().Set(med_obj);
 }
 
+static NAN_METHOD(CodecSetPriority) {
+  Nan::HandleScope scope;
+
+  string codec;
+  int priority = 0;
+  if (info.Length() > 0 && info[0]->IsString()) {
+    Nan::Utf8String codec_str(info[0]);
+    codec = string(*codec_str);
+
+    if (info.Length() > 1 && info[1]->IsInt32()) {
+      int priority_int = static_cast<pj_ssize_t>(info[1]->Int32Value(Nan::GetCurrentContext()).FromJust());
+      if (priority_int >= -1)
+        priority = priority_int;
+    }
+  } else
+    return Nan::ThrowTypeError("Missing name of codec");
+
+  ep->codecSetPriority(codec, priority);
+  info.GetReturnValue().SetUndefined();
+}
+
 static NAN_METHOD(EPVersion) {
   Nan::HandleScope scope;
 
@@ -1042,6 +1063,9 @@ extern "C" {
     Nan::Set(target,
              Nan::New("createPlaylist").ToLocalChecked(),
              Nan::New<FunctionTemplate>(CreatePlaylist)->GetFunction(context).ToLocalChecked());
+    Nan::Set(target,
+             Nan::New("codecSetPriority").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(CodecSetPriority)->GetFunction(context).ToLocalChecked());
   }
 
   NODE_MODULE(sipstel, init);

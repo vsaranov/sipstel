@@ -32,6 +32,11 @@ var sipstel = require('sipstel');
 // initialize pjsip
 sipstel.init();
 
+// enable high priority codec PCMA
+sipstel.codecSetPriority("PCMA/8000", 200);
+// disable codec PCMU
+sipstel.codecSetPriority("PCMU/8000", 0);
+
 // set up a transport to listen for incoming connections, defaults to UDP
 var transport = new sipstel.Transport({ port: 5060 });
 
