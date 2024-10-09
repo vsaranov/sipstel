@@ -69,8 +69,9 @@ NAN_METHOD(SIPSTERCall::New) {
 
   call->Wrap(info.This());
 
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   call->emit = new Nan::Callback(
-    Local<Function>::Cast(call->handle()->Get(Nan::New(emit_symbol)))
+    Local<Function>::Cast(call->handle()->Get(context, Nan::New(emit_symbol)).ToLocalChecked())
   );
 
   info.GetReturnValue().Set(info.This());
@@ -81,8 +82,9 @@ NAN_METHOD(SIPSTERCall::Answer) {
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(info.This());
 
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsUint32()) {
-    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value());
+    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value(context).FromJust());
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String reason_str(info[1]);
       prm.reason = string(*reason_str);
@@ -105,8 +107,9 @@ NAN_METHOD(SIPSTERCall::Hangup) {
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(info.This());
 
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsUint32()) {
-    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value());
+    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value(context).FromJust());
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String reason_str(info[1]);
       prm.reason = string(*reason_str);
@@ -128,8 +131,9 @@ NAN_METHOD(SIPSTERCall::SetHold) {
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(info.This());
 
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsUint32()) {
-    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value());
+    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value(context).FromJust());
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String reason_str(info[1]);
       prm.reason = string(*reason_str);
@@ -151,8 +155,9 @@ NAN_METHOD(SIPSTERCall::Reinvite) {
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(info.This());
 
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsUint32()) {
-    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value());
+    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value(context).FromJust());
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String reason_str(info[1]);
       prm.reason = string(*reason_str);
@@ -174,8 +179,9 @@ NAN_METHOD(SIPSTERCall::Update) {
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(info.This());
 
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsUint32()) {
-    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value());
+    prm.statusCode = static_cast<pjsip_status_code>(info[0]->Int32Value(context).FromJust());
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String reason_str(info[1]);
       prm.reason = string(*reason_str);
@@ -216,11 +222,12 @@ NAN_METHOD(SIPSTERCall::Transfer) {
 
   string dest;
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsString()) {
     Nan::Utf8String dest_str(info[0]);
     dest = string(*dest_str);
     if (info.Length() > 1) {
-      prm.statusCode = static_cast<pjsip_status_code>(info[1]->Int32Value());
+      prm.statusCode = static_cast<pjsip_status_code>(info[1]->Int32Value(context).FromJust());
       if (info.Length() > 2 && info[2]->IsString()) {
         Nan::Utf8String reason_str(info[2]);
         prm.reason = string(*reason_str);
@@ -264,7 +271,7 @@ NAN_METHOD(SIPSTERCall::GetStats) {
   bool with_media = true;
   string indent = "  ";
   if (info.Length() > 0 && info[0]->IsBoolean()) {
-    with_media = info[0]->BooleanValue();
+    with_media = Nan::To<bool>(info[0]).FromJust();
     if (info.Length() > 1 && info[1]->IsString()) {
       Nan::Utf8String indent_str(info[1]);
       indent = string(*indent_str);
@@ -328,7 +335,7 @@ NAN_GETTER(SIPSTERCall::IsActiveGetter) {
   info.GetReturnValue().Set(Nan::New(call->isActive()));
 }
 
-void SIPSTERCall::Initialize(Handle<Object> target) {
+void SIPSTERCall::Initialize(Local<Object> target) {
   Nan::HandleScope scope;
 
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
@@ -361,7 +368,8 @@ void SIPSTERCall::Initialize(Handle<Object> target) {
                    Nan::New("isActive").ToLocalChecked(),
                    IsActiveGetter);
 
-  Nan::Set(target, name, tpl->GetFunction());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  Nan::Set(target, name, tpl->GetFunction(context).ToLocalChecked());
 
   SIPSTERCall_constructor.Reset(tpl);
 }

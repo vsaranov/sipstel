@@ -22,19 +22,19 @@ using namespace pj;
 #define JS2PJ_INT(js, prop, pj) do {                                           \
   val = Nan::Get(js, Nan::New(#prop).ToLocalChecked()).ToLocalChecked();       \
   if (val->IsInt32()) {                                                        \
-    pj.prop = val->Int32Value();                                               \
+    pj.prop = val->Int32Value(Nan::GetCurrentContext()).FromJust();            \
   }                                                                            \
 } while(0)
 #define JS2PJ_UINT(js, prop, pj) do {                                          \
   val = Nan::Get(js, Nan::New(#prop).ToLocalChecked()).ToLocalChecked();       \
   if (val->IsUint32()) {                                                       \
-    pj.prop = val->Uint32Value();                                              \
+    pj.prop = val->Uint32Value(Nan::GetCurrentContext()).FromJust();           \
   }                                                                            \
 } while(0)
 #define JS2PJ_ENUM(js, prop, type, pj) do {                                    \
   val = Nan::Get(js, Nan::New(#prop).ToLocalChecked()).ToLocalChecked();       \
   if (val->IsInt32()) {                                                        \
-    pj.prop = static_cast<type>(val->Int32Value());                            \
+    pj.prop = static_cast<type>(val->Int32Value(Nan::GetCurrentContext()).FromJust());                            \
   }                                                                            \
 } while(0)
 #define JS2PJ_STR(js, prop, pj) do {                                           \
@@ -47,7 +47,7 @@ using namespace pj;
 #define JS2PJ_BOOL(js, prop, pj) do {                                          \
   val = Nan::Get(js, Nan::New(#prop).ToLocalChecked()).ToLocalChecked();       \
   if (val->IsBoolean()) {                                                      \
-    pj.prop = val->BooleanValue();                                             \
+    pj.prop = Nan::To<bool>(val).FromJust();                                   \
   }                                                                            \
 } while(0)
 

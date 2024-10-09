@@ -11,8 +11,8 @@ Requirements
 ============
 
 * Non-Windows OS
-* [pjsip](http://www.pjsip.org/) -- v2.4.5 or newer
-* [node.js](http://nodejs.org/) -- v0.10 or newer
+* [pjsip](http://www.pjsip.org/) -- v2.9 or newer (verified with 2.14.1)
+* [node.js](http://nodejs.org/) -- v14 or newer (verified with 18.20.4)
 
 
 Install

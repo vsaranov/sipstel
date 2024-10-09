@@ -38,7 +38,7 @@ public:
   static NAN_GETTER(TotDurationGetter);
   static NAN_GETTER(HasMediaGetter);
   static NAN_GETTER(IsActiveGetter);
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Local<Object> target);
 };
 
 #endif

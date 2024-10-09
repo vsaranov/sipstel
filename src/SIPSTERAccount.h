@@ -35,7 +35,7 @@ public:
   static NAN_METHOD(MakeCall);
   static NAN_METHOD(DoRef);
   static NAN_METHOD(DoUnref);
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Local<Object> target);
 };
 
 #endif

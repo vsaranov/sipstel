@@ -37,7 +37,7 @@ public:
   static NAN_GETTER(DirGetter);
   static NAN_GETTER(SrcRTPGetter);
   static NAN_GETTER(SrcRTCPGetter);
-  static void Initialize(Handle<Object> target);
+  static void Initialize(Local<Object> target);
 };
 
 #endif

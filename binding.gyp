@@ -17,7 +17,7 @@
       'conditions': [
         [ 'OS=="linux"', {
           'cflags_cc': [
-            '<!@(pkg-config --atleast-version=2.4.5 libpjproject)',
+            '<!@(pkg-config --atleast-version=2.14.1 libpjproject)',
             '<!@(pkg-config --cflags libpjproject)',
             '-fexceptions',
             '-Wno-maybe-uninitialized',
@@ -28,7 +28,7 @@
         }],
         [ 'OS=="mac"', {
           'cflags_cc': [
-            '<!@(pkg-config --atleast-version=2.4.5 libpjproject)',
+            '<!@(pkg-config --atleast-version=2.14.1 libpjproject)',
             '<!@(pkg-config --cflags libpjproject)',
             '-fexceptions',
             '-Wno-maybe-uninitialized',

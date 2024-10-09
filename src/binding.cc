@@ -23,7 +23,7 @@
 
 using namespace std;
 using namespace node;
-using namespace v12;
+using namespace v8;
 using namespace pj;
 
 class SIPSTERLogWriter;
@@ -147,9 +147,10 @@ void dumb_cb(uv_async_t* handle) {
         SIPSTERCall* call = ev.call;
         Local<Value> new_call_args[1] = { Nan::New<External>(call) };
         Local<Object> call_obj;
-        call_obj = Nan::New(SIPSTERCall_constructor)
-                    ->GetFunction()
-                    ->NewInstance(1, new_call_args);
+        v8::Local<v8::Context> context = Nan::GetCurrentContext();
+        v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERCall_constructor)
+                      ->GetFunction(context).ToLocalChecked();
+        call_obj = cons->NewInstance(context, 1, new_call_args).ToLocalChecked();
         Local<Value> emit_argv[3] = {
           Nan::New(ev_INCALL_call_symbol),
           obj,
@@ -235,9 +236,10 @@ void dumb_cb(uv_async_t* handle) {
             if (ci.media[i].type == PJMEDIA_TYPE_AUDIO
                 && (media = static_cast<AudioMedia*>(call->getMedia(i)))) {
               Local<Object> med_obj;
-              med_obj = Nan::New(SIPSTERMedia_constructor)
-                          ->GetFunction()
-                          ->NewInstance(0, NULL);
+              v8::Local<v8::Context> context = Nan::GetCurrentContext();
+              v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+                          ->GetFunction(context).ToLocalChecked();
+              med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
               SIPSTERMedia* med =
                 Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
               med->media = media;
@@ -410,7 +412,7 @@ static NAN_METHOD(CreateRecorder) {
         return Nan::ThrowError("Invalid media format");
     }
     if (info.Length() > 2 && info[2]->IsInt32()) {
-      pj_ssize_t size = static_cast<pj_ssize_t>(info[2]->Int32Value());
+      pj_ssize_t size = static_cast<pj_ssize_t>(info[2]->Int32Value(Nan::GetCurrentContext()).FromJust());
       if (size >= -1)
         max_size = size;
     }
@@ -427,9 +429,10 @@ static NAN_METHOD(CreateRecorder) {
   }
 
   Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+                          ->GetFunction(context).ToLocalChecked();
+  med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = recorder;
   med->is_media_new = true;
@@ -445,7 +448,7 @@ static NAN_METHOD(CreatePlayer) {
   if (info.Length() > 0 && info[0]->IsString()) {
     Nan::Utf8String src_str(info[0]);
     src = string(*src_str);
-    if (info.Length() > 1 && info[1]->IsBoolean() && info[1]->BooleanValue())
+    if (info.Length() > 1 && info[1]->IsBoolean() && Nan::To<bool>(info[1]).FromJust())
       opts = PJMEDIA_FILE_NO_LOOP;
   } else
     return Nan::ThrowTypeError("Missing source filename");
@@ -460,9 +463,11 @@ static NAN_METHOD(CreatePlayer) {
   }
 
   Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+              ->GetFunction(context).ToLocalChecked();
+  med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
+
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;
@@ -477,9 +482,11 @@ static NAN_METHOD(EPGetPlaybackDevMedia) {
 
   AudioMedia& playbackMedia = ep->audDevManager().getPlaybackDevMedia();
   Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+              ->GetFunction(context).ToLocalChecked();
+  med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
+
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
 
   med->media = &playbackMedia;
@@ -493,11 +500,11 @@ static NAN_METHOD(EPGetCaptureDevMedia) {
   AudioMedia& captureMedia = ep->audDevManager().getCaptureDevMedia();
 
   Local<Object> med_obj;
-  
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
-  
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+              ->GetFunction(context).ToLocalChecked();
+  med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
+
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = &captureMedia;
   med->is_media_new = true;
@@ -519,10 +526,10 @@ static NAN_METHOD(CreatePlaylist) {
 
     playlist.reserve(arr_length);
     for (uint32_t i = 0; i < arr_length; ++i) {
-      Nan::Utf8String filename_str(arr_obj->Get(i));
+      Nan::Utf8String filename_str(arr_obj->Get(Nan::GetCurrentContext(), i).ToLocalChecked());
       playlist.push_back(string(*filename_str));
     }
-    if (info.Length() > 1 && info[1]->IsBoolean() && info[1]->BooleanValue())
+    if (info.Length() > 1 && info[1]->IsBoolean() && Nan::To<bool>(info[1]).FromJust())
       opts = PJMEDIA_FILE_NO_LOOP;
   } else
     return Nan::ThrowTypeError("Missing source filenames");
@@ -537,9 +544,11 @@ static NAN_METHOD(CreatePlaylist) {
   }
 
   Local<Object> med_obj;
-  med_obj = Nan::New(SIPSTERMedia_constructor)
-              ->GetFunction()
-              ->NewInstance(0, NULL);
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  v8::Local<v8::Function> cons = Nan::New<v8::FunctionTemplate>(SIPSTERMedia_constructor)
+              ->GetFunction(context).ToLocalChecked();
+  med_obj = cons->NewInstance(context, 0, NULL).ToLocalChecked();
+
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(med_obj);
   med->media = player;
   med->is_media_new = true;
@@ -595,23 +604,24 @@ static NAN_METHOD(EPInit) {
 
   Local<Value> val;
   if (info.Length() > 0 && info[0]->IsObject()) {
-    Local<Object> cfg_obj = info[0]->ToObject();
-    val = cfg_obj->Get(Nan::New("uaConfig").ToLocalChecked());
+    v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
+    Local<Object> cfg_obj = info[0]->ToObject(context).ToLocalChecked();
+    val = cfg_obj->Get(context, Nan::New("uaConfig").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
       UaConfig uaConfig;
-      Local<Object> ua_obj = val->ToObject();
+      Local<Object> ua_obj = val->ToObject(context).ToLocalChecked();
       JS2PJ_UINT(ua_obj, maxCalls, uaConfig);
       JS2PJ_UINT(ua_obj, threadCnt, uaConfig);
       JS2PJ_BOOL(ua_obj, mainThreadOnly, uaConfig);
 
-      val = ua_obj->Get(Nan::New("nameserver").ToLocalChecked());
+      val = ua_obj->Get(context, Nan::New("nameserver").ToLocalChecked()).ToLocalChecked();
       if (val->IsArray()) {
         const Local<Array> arr_obj = Local<Array>::Cast(val);
         const uint32_t arr_length = arr_obj->Length();
         if (arr_length > 0) {
           vector<string> nameservers;
           for (uint32_t i = 0; i < arr_length; ++i) {
-            const Local<Value> arr_val = arr_obj->Get(i);
+            const Local<Value> arr_val = arr_obj->Get(context, i).ToLocalChecked();
             if (arr_val->IsString()) {
               Nan::Utf8String ns_str(arr_val);
               nameservers.push_back(string(*ns_str));
@@ -624,14 +634,14 @@ static NAN_METHOD(EPInit) {
 
       JS2PJ_STR(ua_obj, userAgent, uaConfig);
 
-      val = ua_obj->Get(Nan::New("stunServer").ToLocalChecked());
+      val = ua_obj->Get(context, Nan::New("stunServer").ToLocalChecked()).ToLocalChecked();
       if (val->IsArray()) {
         const Local<Array> arr_obj = Local<Array>::Cast(val);
         const uint32_t arr_length = arr_obj->Length();
         if (arr_length > 0) {
           vector<string> stunServers;
           for (uint32_t i = 0; i < arr_length; ++i) {
-            const Local<Value> arr_val = arr_obj->Get(i);
+            const Local<Value> arr_val = arr_obj->Get(context, i).ToLocalChecked();
             if (arr_val->IsString()) {
               Nan::Utf8String stun_str(arr_val);
               stunServers.push_back(string(*stun_str));
@@ -649,10 +659,10 @@ static NAN_METHOD(EPInit) {
       ep_cfg.uaConfig = uaConfig;
     }
 
-    val = cfg_obj->Get(Nan::New("logConfig").ToLocalChecked());
+    val = cfg_obj->Get(context, Nan::New("logConfig").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
       LogConfig logConfig;
-      Local<Object> log_obj = val->ToObject();
+      Local<Object> log_obj = val->ToObject(context).ToLocalChecked();
       JS2PJ_UINT(log_obj, msgLogging, logConfig);
       JS2PJ_UINT(log_obj, level, logConfig);
       JS2PJ_UINT(log_obj, consoleLevel, logConfig);
@@ -660,7 +670,7 @@ static NAN_METHOD(EPInit) {
       JS2PJ_STR(log_obj, filename, logConfig);
       JS2PJ_UINT(log_obj, fileFlags, logConfig);
 
-      val = log_obj->Get(Nan::New("writer").ToLocalChecked());
+      val = log_obj->Get(context, Nan::New("writer").ToLocalChecked()).ToLocalChecked();
       if (val->IsFunction()) {
         if (logger) {
           delete logger;
@@ -677,10 +687,10 @@ static NAN_METHOD(EPInit) {
       ep_cfg.logConfig = logConfig;
     }
 
-    val = cfg_obj->Get(Nan::New("medConfig").ToLocalChecked());
+    val = cfg_obj->Get(context, Nan::New("medConfig").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
       MediaConfig medConfig;
-      Local<Object> med_obj = val->ToObject();
+      Local<Object> med_obj = val->ToObject(context).ToLocalChecked();
       JS2PJ_UINT(med_obj, clockRate, medConfig);
       JS2PJ_UINT(med_obj, sndClockRate, medConfig);
       JS2PJ_UINT(med_obj, channelCount, medConfig);
@@ -719,10 +729,10 @@ static NAN_METHOD(EPInit) {
 
   uv_async_init(uv_default_loop(), &dumb, static_cast<uv_async_cb>(dumb_cb));
 
-  if ((info.Length() == 1 && info[0]->IsBoolean() && info[0]->BooleanValue())
+  if ((info.Length() == 1 && info[0]->IsBoolean() && Nan::To<bool>(info[0]).FromJust())
       || (info.Length() > 1
           && info[1]->IsBoolean()
-          && info[1]->BooleanValue())) {
+          && Nan::To<bool>(info[1]).FromJust())) {
     if (ep_start)
       return Nan::ThrowError("Already started");
     try {
@@ -755,21 +765,21 @@ static NAN_METHOD(EPStart) {
 }
 static NAN_METHOD(EPGetDevices) {
   Nan::HandleScope scope;
-  AudioDevInfoVector  devices;
+  AudioDevInfoVector2  devices;
   v8::Local<v8::Array> nodeDevices = v8::Local<v8::Array>(Nan::New<v8::Array>());
-  devices = ep->audDevManager().enumDev();
+  devices = ep->audDevManager().enumDev2();
 
   for(std::vector<int>::size_type i = 0; i != devices.size(); i++) {
 
       v8::Local<v8::Object> item = Nan::New<v8::Object>();
        Nan::Set(item, Nan::New<v8::String>("name").ToLocalChecked(),
-          Nan::New<v8::String>(devices[i]->name).ToLocalChecked());
+          Nan::New<v8::String>(devices[i].name).ToLocalChecked());
        Nan::Set(item, Nan::New<v8::String>("id").ToLocalChecked(),
           Nan::New<v8::Uint32>(static_cast<uint32_t>(i)) );
        Nan::Set(item, Nan::New<v8::String>("inputCount").ToLocalChecked(),
-          Nan::New<v8::Uint32>(devices[i]->inputCount));
+          Nan::New<v8::Uint32>(devices[i].inputCount));
        Nan::Set(item, Nan::New<v8::String>("outputCount").ToLocalChecked(),
-          Nan::New<v8::Uint32>(devices[i]->outputCount));
+          Nan::New<v8::Uint32>(devices[i].outputCount));
        Nan::Set(nodeDevices, static_cast<uint32_t>(i), item);
     }
 
@@ -913,7 +923,7 @@ static NAN_METHOD(EPMediaMaxPorts) {
 }
 
 extern "C" {
-  void init(Handle<Object> target) {
+  void init(v8::Local<v8::Object> target, v8::Local<v8::Value> module, void* priv) {
     Nan::HandleScope scope;
 
 #define X(kind, literal)                                                       \
@@ -956,81 +966,82 @@ extern "C" {
     SIPSTERMedia::Initialize(target);
     SIPSTERTransport::Initialize(target);
 
+    v8::Local<v8::Context> context = Nan::GetCurrentContext();
     Nan::Set(target,
              Nan::New("version").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPVersion)->GetFunction());
+             Nan::New<FunctionTemplate>(EPVersion)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("state").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetState)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetState)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("config").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetConfig)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetConfig)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("init").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPInit)->GetFunction());
+             Nan::New<FunctionTemplate>(EPInit)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("start").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPStart)->GetFunction());
+             Nan::New<FunctionTemplate>(EPStart)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("hangupAllCalls").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPHangupAllCalls)->GetFunction());
+             Nan::New<FunctionTemplate>(EPHangupAllCalls)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("mediaActivePorts").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPMediaActivePorts)->GetFunction());
+             Nan::New<FunctionTemplate>(EPMediaActivePorts)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("mediaMaxPorts").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPMediaMaxPorts)->GetFunction());
+             Nan::New<FunctionTemplate>(EPMediaMaxPorts)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getDevices").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetDevices)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetDevices)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setCaptureDev").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetCaptureDevice)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetCaptureDevice)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setNullDev").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetNullDevice)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetNullDevice)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setPlaybackDev").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetPlaybackDevice)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetPlaybackDevice)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getCaptureDev").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetCaptureDevice)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetCaptureDevice)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getPlaybackDev").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetPlaybackDevice)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetPlaybackDevice)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setInputVolume").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetInputVolume)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetInputVolume)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setOutputVolume").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetOutputVolume)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetOutputVolume)->GetFunction(context).ToLocalChecked());
        Nan::Set(target,
              Nan::New("getInputVolume").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetInputVolume)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetInputVolume)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getOutputVolume").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetOutputVolume)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetOutputVolume)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getAECTail").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetAEC)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetAEC)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("setAECTail").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPSetAEC)->GetFunction());
+             Nan::New<FunctionTemplate>(EPSetAEC)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getPlaybackDevMedia").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetPlaybackDevMedia)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetPlaybackDevMedia)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("getCaptureDevMedia").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(EPGetCaptureDevMedia)->GetFunction());
+             Nan::New<FunctionTemplate>(EPGetCaptureDevMedia)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("createRecorder").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(CreateRecorder)->GetFunction());
+             Nan::New<FunctionTemplate>(CreateRecorder)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("createPlayer").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(CreatePlayer)->GetFunction());
+             Nan::New<FunctionTemplate>(CreatePlayer)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("createPlaylist").ToLocalChecked(),
-             Nan::New<FunctionTemplate>(CreatePlaylist)->GetFunction());
+             Nan::New<FunctionTemplate>(CreatePlaylist)->GetFunction(context).ToLocalChecked());
   }
 
   NODE_MODULE(sipstel, init);

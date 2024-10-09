@@ -5,13 +5,13 @@
   "description": "A pjsip binding for node.js",
   "main": "./lib/main",
   "dependencies": {
-    "nan": "^2.10.0"
+    "nan": "^2.20.0"
   },
   "os": [
     "!win32"
   ],
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=14.0.0"
   },
   "keywords": [
     "sip",

@@ -30,8 +30,9 @@ NAN_METHOD(SIPSTERMedia::New) {
 
   med->Wrap(info.This());
 
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   med->emit = new Nan::Callback(
-    Local<Function>::Cast(med->handle()->Get(Nan::New(emit_symbol)))
+    Local<Function>::Cast(med->handle()->Get(context, Nan::New(emit_symbol)).ToLocalChecked())
   );
 
   info.GetReturnValue().Set(info.This());
@@ -92,11 +93,12 @@ NAN_METHOD(SIPSTERMedia::StopTransmit) {
 NAN_METHOD(SIPSTERMedia::AdjustRxLevel) {
   Nan::HandleScope scope;
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(info.This());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
 
   if (med->media) {
     if (info.Length() > 0 && info[0]->IsNumber()) {
       try {
-        med->media->adjustRxLevel(static_cast<float>(info[0]->NumberValue()));
+        med->media->adjustRxLevel(static_cast<float>(info[0]->NumberValue(context).FromJust()));
       } catch(Error& err) {
         string errstr = "AudioMedia.adjustRxLevel() error: " + err.info();
         return Nan::ThrowError(errstr.c_str());
@@ -111,11 +113,12 @@ NAN_METHOD(SIPSTERMedia::AdjustRxLevel) {
 NAN_METHOD(SIPSTERMedia::AdjustTxLevel) {
   Nan::HandleScope scope;
   SIPSTERMedia* med = Nan::ObjectWrap::Unwrap<SIPSTERMedia>(info.This());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
 
   if (med->media) {
     if (info.Length() > 0 && info[0]->IsNumber()) {
       try {
-        med->media->adjustTxLevel(static_cast<float>(info[0]->NumberValue()));
+        med->media->adjustTxLevel(static_cast<float>(info[0]->NumberValue(context).FromJust()));
       } catch(Error& err) {
         string errstr = "AudioMedia.adjustTxLevel() error: " + err.info();
         return Nan::ThrowError(errstr.c_str());
@@ -207,7 +210,7 @@ NAN_GETTER(SIPSTERMedia::SrcRTCPGetter) {
   info.GetReturnValue().Set(Nan::New(med->srcRTCP.c_str()).ToLocalChecked());
 }
 
-void SIPSTERMedia::Initialize(Handle<Object> target) {
+void SIPSTERMedia::Initialize(Local<Object> target) {
   Nan::HandleScope scope;
 
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
@@ -244,7 +247,8 @@ void SIPSTERMedia::Initialize(Handle<Object> target) {
                    Nan::New("txLevel").ToLocalChecked(),
                    TxLevelGetter);
 
-  Nan::Set(target, name, tpl->GetFunction());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  Nan::Set(target, name, tpl->GetFunction(context).ToLocalChecked());
 
   SIPSTERMedia_constructor.Reset(tpl);
 }

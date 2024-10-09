@@ -25,23 +25,24 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
   JS2PJ_INT(acct_obj, priority, acct_cfg);
   JS2PJ_STR(acct_obj, idUri, acct_cfg);
 
-  val = acct_obj->Get(Nan::New("regConfig").ToLocalChecked());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  val = acct_obj->Get(context, Nan::New("regConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountRegConfig regConfig = {};
-    Local<Object> reg_obj = val->ToObject();
+    Local<Object> reg_obj = val->ToObject(context).ToLocalChecked();
     JS2PJ_STR(reg_obj, registrarUri, regConfig);
     JS2PJ_BOOL(reg_obj, registerOnAdd, regConfig);
 
-    val = reg_obj->Get(Nan::New("headers").ToLocalChecked());
+    val = reg_obj->Get(context, Nan::New("headers").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
-      const Local<Object> hdr_obj = val->ToObject();
-      const Local<Array> hdr_props = hdr_obj->GetPropertyNames();
+      const Local<Object> hdr_obj = val->ToObject(context).ToLocalChecked();
+      const Local<Array> hdr_props = hdr_obj->GetPropertyNames(context).ToLocalChecked();
       const uint32_t hdr_length = hdr_props->Length();
       if (hdr_length > 0) {
         vector<SipHeader> sipheaders;
         for (uint32_t i = 0; i < hdr_length; ++i) {
-          const Local<Value> key = hdr_props->Get(i);
-          const Local<Value> value = hdr_obj->Get(key);
+          const Local<Value> key = hdr_props->Get(context, i).ToLocalChecked();
+          const Local<Value> value = hdr_obj->Get(context, key).ToLocalChecked();
           SipHeader hdr;
           Nan::Utf8String name_str(key);
           Nan::Utf8String val_str(value);
@@ -63,27 +64,27 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.regConfig = regConfig;
   }
-  val = acct_obj->Get(Nan::New("sipConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("sipConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountSipConfig sipConfig = {};
-    Local<Object> sip_obj = val->ToObject();
+    Local<Object> sip_obj = val->ToObject(context).ToLocalChecked();
 
-    val = sip_obj->Get(Nan::New("authCreds").ToLocalChecked());
+    val = sip_obj->Get(context, Nan::New("authCreds").ToLocalChecked()).ToLocalChecked();
     if (val->IsArray()) {
       const Local<Array> arr_obj = Local<Array>::Cast(val);
       const uint32_t arr_length = arr_obj->Length();
       if (arr_length > 0) {
         vector<AuthCredInfo> creds;
         for (uint32_t i = 0; i < arr_length; ++i) {
-          const Local<Value> cred_value = arr_obj->Get(i);
+          const Local<Value> cred_value = arr_obj->Get(context, i).ToLocalChecked();
           if (cred_value->IsObject()) {
-            const Local<Object> auth_obj = cred_value->ToObject();
+            const Local<Object> auth_obj = cred_value->ToObject(context).ToLocalChecked();
             AuthCredInfo credinfo;
-            Local<Value> scheme_val = auth_obj->Get(Nan::New("scheme").ToLocalChecked());
-            Local<Value> realm_val = auth_obj->Get(Nan::New("realm").ToLocalChecked());
-            Local<Value> username_val = auth_obj->Get(Nan::New("username").ToLocalChecked());
-            Local<Value> dataType_val = auth_obj->Get(Nan::New("dataType").ToLocalChecked());
-            Local<Value> data_val = auth_obj->Get(Nan::New("data").ToLocalChecked());
+            Local<Value> scheme_val = auth_obj->Get(context, Nan::New("scheme").ToLocalChecked()).ToLocalChecked();
+            Local<Value> realm_val = auth_obj->Get(context, Nan::New("realm").ToLocalChecked()).ToLocalChecked();
+            Local<Value> username_val = auth_obj->Get(context, Nan::New("username").ToLocalChecked()).ToLocalChecked();
+            Local<Value> dataType_val = auth_obj->Get(context, Nan::New("dataType").ToLocalChecked()).ToLocalChecked();
+            Local<Value> data_val = auth_obj->Get(context, Nan::New("data").ToLocalChecked()).ToLocalChecked();
             if (scheme_val->IsString()
                 && realm_val->IsString()
                 && username_val->IsString()
@@ -96,7 +97,7 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
               credinfo.scheme = string(*scheme_str);
               credinfo.realm = string(*realm_str);
               credinfo.username = string(*username_str);
-              credinfo.dataType = dataType_val->Int32Value();
+              credinfo.dataType = dataType_val->Int32Value(context).FromJust();
               credinfo.data = string(*data_str);
               creds.push_back(credinfo);
             }
@@ -107,14 +108,14 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
       }
     }
 
-    val = sip_obj->Get(Nan::New("proxies").ToLocalChecked());
+    val = sip_obj->Get(context, Nan::New("proxies").ToLocalChecked()).ToLocalChecked();
     if (val->IsArray()) {
       const Local<Array> arr_obj = Local<Array>::Cast(val);
       const uint32_t arr_length = arr_obj->Length();
       if (arr_length > 0) {
         vector<string> proxies;
         for (uint32_t i = 0; i < arr_length; ++i) {
-          const Local<Value> value = arr_obj->Get(i);
+          const Local<Value> value = arr_obj->Get(context, i).ToLocalChecked();
           Nan::Utf8String value_str(value);
           proxies.push_back(string(*value_str));
         }
@@ -131,7 +132,7 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
     // deviates from the pjsip config structure to accept a Transport instance
     // instead of a transport id since that information is made available to
     // JS land
-    val = sip_obj->Get(Nan::New("transport").ToLocalChecked());
+    val = sip_obj->Get(context, Nan::New("transport").ToLocalChecked()).ToLocalChecked();
     if (Nan::New(SIPSTERTransport_constructor)->HasInstance(val)) {
       SIPSTERTransport* trans =
         Nan::ObjectWrap::Unwrap<SIPSTERTransport>(Local<Object>::Cast(val));
@@ -141,10 +142,10 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.sipConfig = sipConfig;
   }
-  val = acct_obj->Get(Nan::New("callConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("callConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountCallConfig callConfig;
-    Local<Object> call_obj = val->ToObject();
+    Local<Object> call_obj = val->ToObject(context).ToLocalChecked();
     JS2PJ_ENUM(call_obj, holdType, pjsua_call_hold_type, callConfig);
     JS2PJ_ENUM(call_obj, prackUse, pjsua_100rel_use, callConfig);
     JS2PJ_ENUM(call_obj, timerUse, pjsua_sip_timer_use, callConfig);
@@ -153,21 +154,21 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.callConfig = callConfig;
   }
-  val = acct_obj->Get(Nan::New("presConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("presConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountPresConfig presConfig;
-    Local<Object> pres_obj = val->ToObject();
+    Local<Object> pres_obj = val->ToObject(context).ToLocalChecked();
 
-    val = pres_obj->Get(Nan::New("headers").ToLocalChecked());
+    val = pres_obj->Get(context, Nan::New("headers").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
-      const Local<Object> hdr_obj = val->ToObject();
-      const Local<Array> hdr_props = hdr_obj->GetPropertyNames();
+      const Local<Object> hdr_obj = val->ToObject(context).ToLocalChecked();
+      const Local<Array> hdr_props = hdr_obj->GetPropertyNames(context).ToLocalChecked();
       const uint32_t hdr_length = hdr_props->Length();
       if (hdr_length > 0) {
         vector<SipHeader> sipheaders;
         for (uint32_t i = 0; i < hdr_length; ++i) {
-          const Local<Value> key = hdr_props->Get(i);
-          const Local<Value> value = hdr_obj->Get(key);
+          const Local<Value> key = hdr_props->Get(context, i).ToLocalChecked();
+          const Local<Value> value = hdr_obj->Get(context, key).ToLocalChecked();
           SipHeader hdr;
           Nan::Utf8String name_str(key);
           Nan::Utf8String value_str(value);
@@ -186,19 +187,19 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.presConfig = presConfig;
   }
-  val = acct_obj->Get(Nan::New("mwiConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("mwiConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountMwiConfig mwiConfig;
-    Local<Object> mwi_obj = val->ToObject();
+    Local<Object> mwi_obj = val->ToObject(context).ToLocalChecked();
     JS2PJ_BOOL(mwi_obj, enabled, mwiConfig);
     JS2PJ_UINT(mwi_obj, expirationSec, mwiConfig);
 
     acct_cfg.mwiConfig = mwiConfig;
   }
-  val = acct_obj->Get(Nan::New("natConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("natConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountNatConfig natConfig;
-    Local<Object> nat_obj = val->ToObject();
+    Local<Object> nat_obj = val->ToObject(context).ToLocalChecked();
     JS2PJ_ENUM(nat_obj, sipStunUse, pjsua_stun_use, natConfig);
     JS2PJ_ENUM(nat_obj, mediaStunUse, pjsua_stun_use, natConfig);
     JS2PJ_BOOL(nat_obj, iceEnabled, natConfig);
@@ -226,67 +227,67 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.natConfig = natConfig;
   }
-  val = acct_obj->Get(Nan::New("mediaConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("mediaConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountMediaConfig mediaConfig;
-    Local<Object> media_obj = val->ToObject();
+    Local<Object> media_obj = val->ToObject(context).ToLocalChecked();
 
-    val = media_obj->Get(Nan::New("transportConfig").ToLocalChecked());
+    val = media_obj->Get(context, Nan::New("transportConfig").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
       TransportConfig transportConfig;
-      Local<Object> obj = val->ToObject();
+      Local<Object> obj = val->ToObject(context).ToLocalChecked();
       JS2PJ_UINT(obj, port, transportConfig);
       JS2PJ_UINT(obj, portRange, transportConfig);
       JS2PJ_STR(obj, publicAddress, transportConfig);
       JS2PJ_STR(obj, boundAddress, transportConfig);
       JS2PJ_ENUM(obj, qosType, pj_qos_type, transportConfig);
 
-      val = obj->Get(Nan::New("qosParams").ToLocalChecked());
+      val = obj->Get(context, Nan::New("qosParams").ToLocalChecked()).ToLocalChecked();
       if (val->IsObject()) {
         pj_qos_params qos_params;
-        Local<Object> qos_obj = val->ToObject();
-        Local<Value> flags_val = qos_obj->Get(Nan::New("flags").ToLocalChecked());
-        Local<Value> dscp_val = qos_obj->Get(Nan::New("dscp_val").ToLocalChecked());
-        Local<Value> so_prio_val = qos_obj->Get(Nan::New("so_prio").ToLocalChecked());
-        Local<Value> wmm_prio_val = qos_obj->Get(Nan::New("wmm_prio").ToLocalChecked());
+        Local<Object> qos_obj = val->ToObject(context).ToLocalChecked();
+        Local<Value> flags_val = qos_obj->Get(context, Nan::New("flags").ToLocalChecked()).ToLocalChecked();
+        Local<Value> dscp_val = qos_obj->Get(context, Nan::New("dscp_val").ToLocalChecked()).ToLocalChecked();
+        Local<Value> so_prio_val = qos_obj->Get(context, Nan::New("so_prio").ToLocalChecked()).ToLocalChecked();
+        Local<Value> wmm_prio_val = qos_obj->Get(context, Nan::New("wmm_prio").ToLocalChecked()).ToLocalChecked();
         if (flags_val->IsUint32()) {
           qos_params.flags =
-            static_cast<pj_uint8_t>(flags_val->Uint32Value());
+            static_cast<pj_uint8_t>(flags_val->Uint32Value(context).FromJust());
         }
         if (dscp_val->IsUint32()) {
           qos_params.dscp_val =
-            static_cast<pj_uint8_t>(dscp_val->Uint32Value());
+            static_cast<pj_uint8_t>(dscp_val->Uint32Value(context).FromJust());
         }
         if (so_prio_val->IsUint32()) {
           qos_params.so_prio =
-            static_cast<pj_uint8_t>(so_prio_val->Uint32Value());
+            static_cast<pj_uint8_t>(so_prio_val->Uint32Value(context).FromJust());
         }
         if (wmm_prio_val->IsUint32()) {
           qos_params.wmm_prio =
-            static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value());
+            static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value(context).FromJust());
         }
         transportConfig.qosParams = qos_params;
       }
 
-      val = obj->Get(Nan::New("tlsConfig").ToLocalChecked());
+      val = obj->Get(context, Nan::New("tlsConfig").ToLocalChecked()).ToLocalChecked();
       if (val->IsObject()) {
         TlsConfig tlsConfig;
-        Local<Object> tls_obj = val->ToObject();
+        Local<Object> tls_obj = val->ToObject(context).ToLocalChecked();
         JS2PJ_STR(tls_obj, CaListFile, tlsConfig);
         JS2PJ_STR(tls_obj, certFile, tlsConfig);
         JS2PJ_STR(tls_obj, privKeyFile, tlsConfig);
         JS2PJ_STR(tls_obj, password, tlsConfig);
         JS2PJ_ENUM(tls_obj, method, pjsip_ssl_method, tlsConfig);
 
-        val = tls_obj->Get(Nan::New("ciphers").ToLocalChecked());
+        val = tls_obj->Get(context, Nan::New("ciphers").ToLocalChecked()).ToLocalChecked();
         if (val->IsArray()) {
           const Local<Array> arr_obj = Local<Array>::Cast(val);
           const uint32_t arr_length = arr_obj->Length();
           if (arr_length > 0) {
             vector<int> ciphers;
             for (uint32_t i = 0; i < arr_length; ++i) {
-              const Local<Value> value = arr_obj->Get(i);
-              ciphers.push_back(value->Int32Value());
+              const Local<Value> value = arr_obj->Get(context, i).ToLocalChecked();
+              ciphers.push_back(value->Int32Value(context).FromJust());
             }
             tlsConfig.ciphers = ciphers;
           }
@@ -298,29 +299,29 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
         JS2PJ_UINT(tls_obj, msecTimeout, tlsConfig);
         JS2PJ_ENUM(tls_obj, qosType, pj_qos_type, tlsConfig);
 
-        val = tls_obj->Get(Nan::New("qosParams").ToLocalChecked());
+        val = tls_obj->Get(context, Nan::New("qosParams").ToLocalChecked()).ToLocalChecked();
         if (val->IsObject()) {
           pj_qos_params qos_params;
-          Local<Object> qos_obj = val->ToObject();
-          Local<Value> flags_val = qos_obj->Get(Nan::New("flags").ToLocalChecked());
-          Local<Value> dscp_val = qos_obj->Get(Nan::New("dscp_val").ToLocalChecked());
-          Local<Value> so_prio_val = qos_obj->Get(Nan::New("so_prio").ToLocalChecked());
-          Local<Value> wmm_prio_val = qos_obj->Get(Nan::New("wmm_prio").ToLocalChecked());
+          Local<Object> qos_obj = val->ToObject(context).ToLocalChecked();
+          Local<Value> flags_val = qos_obj->Get(context, Nan::New("flags").ToLocalChecked()).ToLocalChecked();
+          Local<Value> dscp_val = qos_obj->Get(context, Nan::New("dscp_val").ToLocalChecked()).ToLocalChecked();
+          Local<Value> so_prio_val = qos_obj->Get(context, Nan::New("so_prio").ToLocalChecked()).ToLocalChecked();
+          Local<Value> wmm_prio_val = qos_obj->Get(context, Nan::New("wmm_prio").ToLocalChecked()).ToLocalChecked();
           if (flags_val->IsUint32()) {
             qos_params.flags =
-              static_cast<pj_uint8_t>(flags_val->Uint32Value());
+              static_cast<pj_uint8_t>(flags_val->Uint32Value(context).FromJust());
           }
           if (dscp_val->IsUint32()) {
             qos_params.dscp_val =
-              static_cast<pj_uint8_t>(dscp_val->Uint32Value());
+              static_cast<pj_uint8_t>(dscp_val->Uint32Value(context).FromJust());
           }
           if (so_prio_val->IsUint32()) {
             qos_params.so_prio =
-              static_cast<pj_uint8_t>(so_prio_val->Uint32Value());
+              static_cast<pj_uint8_t>(so_prio_val->Uint32Value(context).FromJust());
           }
           if (wmm_prio_val->IsUint32()) {
             qos_params.wmm_prio =
-              static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value());
+              static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value(context).FromJust());
           }
           tlsConfig.qosParams = qos_params;
         }
@@ -341,10 +342,10 @@ AccountConfig SIPSTERAccount::genConfig(Local<Object> acct_obj) {
 
     acct_cfg.mediaConfig = mediaConfig;
   }
-  val = acct_obj->Get(Nan::New("videoConfig").ToLocalChecked());
+  val = acct_obj->Get(context, Nan::New("videoConfig").ToLocalChecked()).ToLocalChecked();
   if (val->IsObject()) {
     AccountVideoConfig videoConfig;
-    Local<Object> vid_obj = val->ToObject();
+    Local<Object> vid_obj = val->ToObject(context).ToLocalChecked();
     JS2PJ_BOOL(vid_obj, autoShowIncoming, videoConfig);
     JS2PJ_BOOL(vid_obj, autoTransmitOutgoing, videoConfig);
     JS2PJ_UINT(vid_obj, windowFlags, videoConfig);
@@ -438,13 +439,14 @@ NAN_METHOD(SIPSTERAccount::New) {
   AccountConfig acct_cfg;
   string errstr;
   bool isDefault = false;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsObject()) {
-    acct_cfg = genConfig(info[0]->ToObject());
+    acct_cfg = genConfig(info[0]->ToObject(context).ToLocalChecked());
 
     if (info.Length() > 1 && info[1]->IsBoolean())
-      isDefault = info[1]->BooleanValue();
+      isDefault = Nan::To<bool>(info[1]).FromJust();
   } else if (info.Length() > 0 && info[0]->IsBoolean())
-    isDefault = info[0]->BooleanValue();
+    isDefault = Nan::To<bool>(info[0]).FromJust();
 
   try {
     acct->create(acct_cfg, isDefault);
@@ -458,7 +460,7 @@ NAN_METHOD(SIPSTERAccount::New) {
   acct->Ref();
 
   acct->emit = new Nan::Callback(
-    Local<Function>::Cast(acct->handle()->Get(Nan::New(emit_symbol)))
+    Local<Function>::Cast(acct->handle()->Get(context, Nan::New(emit_symbol)).ToLocalChecked())
   );
 
   info.GetReturnValue().Set(info.This());
@@ -469,8 +471,9 @@ NAN_METHOD(SIPSTERAccount::Modify) {
   SIPSTERAccount* acct = Nan::ObjectWrap::Unwrap<SIPSTERAccount>(info.This());
 
   AccountConfig acct_cfg;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsObject())
-    acct_cfg = genConfig(info[0]->ToObject());
+    acct_cfg = genConfig(info[0]->ToObject(context).ToLocalChecked());
   else
     return Nan::ThrowTypeError("Missing renew argument");
 
@@ -498,7 +501,7 @@ NAN_SETTER(SIPSTERAccount::DefaultSetter) {
   Nan::HandleScope scope;
   SIPSTERAccount* acct = Nan::ObjectWrap::Unwrap<SIPSTERAccount>(info.This());
 
-  if (value->BooleanValue()) {
+  if (Nan::To<bool>(value).FromJust()) {
     try {
       acct->setDefault();
     } catch(Error& err) {
@@ -544,7 +547,7 @@ NAN_METHOD(SIPSTERAccount::SetRegistration) {
 
   bool renew;
   if (info.Length() > 0 && info[0]->IsBoolean())
-    renew = info[0]->BooleanValue();
+    renew = Nan::To<bool>(info[0]).FromJust();
   else
     return Nan::ThrowTypeError("Missing renew argument");
 
@@ -586,11 +589,12 @@ NAN_METHOD(SIPSTERAccount::MakeCall) {
 
   string dest;
   CallOpParam prm;
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
   if (info.Length() > 0 && info[0]->IsString()) {
     Nan::Utf8String dest_str(info[0]);
     dest = string(*dest_str);
     if (info.Length() > 1) {
-      prm.statusCode = static_cast<pjsip_status_code>(info[1]->Int32Value());
+      prm.statusCode = static_cast<pjsip_status_code>(info[1]->Int32Value(context).FromJust());
       if (info.Length() > 2 && info[2]->IsString()) {
         Nan::Utf8String reason_str(info[2]);
         prm.reason = string(*reason_str);
@@ -599,9 +603,9 @@ NAN_METHOD(SIPSTERAccount::MakeCall) {
   } else
     return Nan::ThrowTypeError("Missing call destination");
 
-  Handle<Value> new_call_args[1] = { info.This() };
+  Local<Value> new_call_args[1] = { info.This() };
   v8::Local<v8::Function> cons
-    = Nan::New(SIPSTERCall_constructor)->GetFunction();
+    = Nan::New(SIPSTERCall_constructor)->GetFunction(context).ToLocalChecked();
   Local<Object> call_obj
     = Nan::NewInstance(cons, 1, new_call_args).ToLocalChecked();
   SIPSTERCall* call = Nan::ObjectWrap::Unwrap<SIPSTERCall>(call_obj);
@@ -634,11 +638,12 @@ NAN_METHOD(SIPSTERAccount::DoUnref) {
   info.GetReturnValue().SetUndefined();
 }
 
-void SIPSTERAccount::Initialize(Handle<Object> target) {
+void SIPSTERAccount::Initialize(Local<Object> target) {
   Nan::HandleScope scope;
 
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
   Local<String> name = Nan::New("Account").ToLocalChecked();
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
 
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   tpl->SetClassName(name);
@@ -659,7 +664,7 @@ void SIPSTERAccount::Initialize(Handle<Object> target) {
                    DefaultGetter,
                    DefaultSetter);
 
-  Nan::Set(target, name, tpl->GetFunction());
+  Nan::Set(target, name, tpl->GetFunction(context).ToLocalChecked());
 
   SIPSTERAccount_constructor.Reset(tpl);
 

@@ -29,58 +29,59 @@ NAN_METHOD(SIPSTERTransport::New) {
   TransportConfig tp_cfg;
   string errstr;
 
+  v8::Local<v8::Context> context = info.GetIsolate()->GetCurrentContext();
   Local<Value> val;
   if (info.Length() > 0 && info[0]->IsObject()) {
-    Local<Object> obj = info[0]->ToObject();
+    Local<Object> obj = info[0]->ToObject(context).ToLocalChecked();
     JS2PJ_UINT(obj, port, tp_cfg);
     JS2PJ_UINT(obj, portRange, tp_cfg);
     JS2PJ_STR(obj, publicAddress, tp_cfg);
     JS2PJ_STR(obj, boundAddress, tp_cfg);
     JS2PJ_ENUM(obj, qosType, pj_qos_type, tp_cfg);
 
-    val = obj->Get(Nan::New("qosParams").ToLocalChecked());
+    val = obj->Get(context, Nan::New("qosParams").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
       pj_qos_params qos_params;
-      Local<Object> qos_obj = val->ToObject();
-      Local<Value> flags_val = qos_obj->Get(Nan::New("flags").ToLocalChecked());
-      Local<Value> dscp_val = qos_obj->Get(Nan::New("dscp_val").ToLocalChecked());
-      Local<Value> so_prio_val = qos_obj->Get(Nan::New("so_prio").ToLocalChecked());
-      Local<Value> wmm_prio_val = qos_obj->Get(Nan::New("wmm_prio").ToLocalChecked());
+      Local<Object> qos_obj = val->ToObject(context).ToLocalChecked();
+      Local<Value> flags_val = qos_obj->Get(context, Nan::New("flags").ToLocalChecked()).ToLocalChecked();
+      Local<Value> dscp_val = qos_obj->Get(context, Nan::New("dscp_val").ToLocalChecked()).ToLocalChecked();
+      Local<Value> so_prio_val = qos_obj->Get(context, Nan::New("so_prio").ToLocalChecked()).ToLocalChecked();
+      Local<Value> wmm_prio_val = qos_obj->Get(context, Nan::New("wmm_prio").ToLocalChecked()).ToLocalChecked();
       if (flags_val->IsUint32())
-        qos_params.flags = static_cast<pj_uint8_t>(flags_val->Uint32Value());
+        qos_params.flags = static_cast<pj_uint8_t>(flags_val->Uint32Value(context).FromJust());
       if (dscp_val->IsUint32()) {
         qos_params.dscp_val =
-          static_cast<pj_uint8_t>(dscp_val->Uint32Value());
+          static_cast<pj_uint8_t>(dscp_val->Uint32Value(context).FromJust());
       }
       if (so_prio_val->IsUint32()) {
         qos_params.so_prio =
-          static_cast<pj_uint8_t>(so_prio_val->Uint32Value());
+          static_cast<pj_uint8_t>(so_prio_val->Uint32Value(context).FromJust());
       }
       if (wmm_prio_val->IsUint32()) {
         qos_params.wmm_prio =
-          static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value());
+          static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value(context).FromJust());
       }
       tp_cfg.qosParams = qos_params;
     }
 
-    val = obj->Get(Nan::New("tlsConfig").ToLocalChecked());
+    val = obj->Get(context, Nan::New("tlsConfig").ToLocalChecked()).ToLocalChecked();
     if (val->IsObject()) {
-      Local<Object> tls_obj = val->ToObject();
+      Local<Object> tls_obj = val->ToObject(context).ToLocalChecked();
       JS2PJ_STR(tls_obj, CaListFile, tp_cfg.tlsConfig);
       JS2PJ_STR(tls_obj, certFile, tp_cfg.tlsConfig);
       JS2PJ_STR(tls_obj, privKeyFile, tp_cfg.tlsConfig);
       JS2PJ_STR(tls_obj, password, tp_cfg.tlsConfig);
       JS2PJ_ENUM(tls_obj, method, pjsip_ssl_method, tp_cfg.tlsConfig);
 
-      val = tls_obj->Get(Nan::New("ciphers").ToLocalChecked());
+      val = tls_obj->Get(context, Nan::New("ciphers").ToLocalChecked()).ToLocalChecked();
       if (val->IsArray()) {
         const Local<Array> arr_obj = Local<Array>::Cast(val);
         const uint32_t arr_length = arr_obj->Length();
         if (arr_length > 0) {
           vector<int> ciphers;
           for (uint32_t i = 0; i < arr_length; ++i) {
-            const Local<Value> value = arr_obj->Get(i);
-            ciphers.push_back(value->Int32Value());
+            const Local<Value> value = arr_obj->Get(context, i).ToLocalChecked();
+            ciphers.push_back(value->Int32Value(context).FromJust());
           }
           tp_cfg.tlsConfig.ciphers = ciphers;
         }
@@ -92,29 +93,29 @@ NAN_METHOD(SIPSTERTransport::New) {
       JS2PJ_UINT(tls_obj, msecTimeout, tp_cfg.tlsConfig);
       JS2PJ_ENUM(tls_obj, qosType, pj_qos_type, tp_cfg.tlsConfig);
 
-      val = tls_obj->Get(Nan::New("qosParams").ToLocalChecked());
+      val = tls_obj->Get(context, Nan::New("qosParams").ToLocalChecked()).ToLocalChecked();
       if (val->IsObject()) {
         pj_qos_params qos_params;
-        Local<Object> qos_obj = val->ToObject();
-        Local<Value> flags_val = qos_obj->Get(Nan::New("flags").ToLocalChecked());
-        Local<Value> dscp_val = qos_obj->Get(Nan::New("dscp_val").ToLocalChecked());
-        Local<Value> so_prio_val = qos_obj->Get(Nan::New("so_prio").ToLocalChecked());
-        Local<Value> wmm_prio_val = qos_obj->Get(Nan::New("wmm_prio").ToLocalChecked());
+        Local<Object> qos_obj = val->ToObject(context).ToLocalChecked();
+        Local<Value> flags_val = qos_obj->Get(context, Nan::New("flags").ToLocalChecked()).ToLocalChecked();
+        Local<Value> dscp_val = qos_obj->Get(context, Nan::New("dscp_val").ToLocalChecked()).ToLocalChecked();
+        Local<Value> so_prio_val = qos_obj->Get(context, Nan::New("so_prio").ToLocalChecked()).ToLocalChecked();
+        Local<Value> wmm_prio_val = qos_obj->Get(context, Nan::New("wmm_prio").ToLocalChecked()).ToLocalChecked();
         if (flags_val->IsUint32()) {
           qos_params.flags =
-            static_cast<pj_uint8_t>(flags_val->Uint32Value());
+            static_cast<pj_uint8_t>(flags_val->Uint32Value(context).FromJust());
         }
         if (dscp_val->IsUint32()) {
           qos_params.dscp_val =
-            static_cast<pj_uint8_t>(dscp_val->Uint32Value());
+            static_cast<pj_uint8_t>(dscp_val->Uint32Value(context).FromJust());
         }
         if (so_prio_val->IsUint32()) {
           qos_params.so_prio =
-            static_cast<pj_uint8_t>(so_prio_val->Uint32Value());
+            static_cast<pj_uint8_t>(so_prio_val->Uint32Value(context).FromJust());
         }
         if (wmm_prio_val->IsUint32()) {
           qos_params.wmm_prio =
-            static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value());
+            static_cast<pj_qos_wmm_prio>(wmm_prio_val->Uint32Value(context).FromJust());
         }
         tp_cfg.tlsConfig.qosParams = qos_params;
       }
@@ -174,7 +175,7 @@ NAN_METHOD(SIPSTERTransport::New) {
   trans->transId = tid;
   trans->enabled = true;
   trans->emit = new Nan::Callback(
-    Local<Function>::Cast(trans->handle()->Get(Nan::New(emit_symbol)))
+    Local<Function>::Cast(trans->handle()->Get(context, Nan::New(emit_symbol)).ToLocalChecked())
   );
 
   info.GetReturnValue().Set(info.This());
@@ -280,7 +281,7 @@ NAN_GETTER(SIPSTERTransport::EnabledGetter) {
   info.GetReturnValue().Set(Nan::New(trans->enabled));
 }
 
-void SIPSTERTransport::Initialize(Handle<Object> target) {
+void SIPSTERTransport::Initialize(Local<Object> target) {
   Nan::HandleScope scope;
 
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
@@ -299,7 +300,8 @@ void SIPSTERTransport::Initialize(Handle<Object> target) {
                    Nan::New("enabled").ToLocalChecked(),
                    EnabledGetter);
 
-  Nan::Set(target, name, tpl->GetFunction());
+  v8::Local<v8::Context> context = Nan::GetCurrentContext();
+  Nan::Set(target, name, tpl->GetFunction(context).ToLocalChecked());
 
   SIPSTERTransport_constructor.Reset(tpl);
 }
