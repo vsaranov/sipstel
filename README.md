@@ -32,6 +32,9 @@ var sipstel = require('sipstel');
 // initialize pjsip
 sipstel.init();
 
+// disable audiodevice
+sipstel.setNullDev();
+
 // enable high priority codec PCMA
 sipstel.codecSetPriority("PCMA/8000", 200);
 // disable codec PCMU
