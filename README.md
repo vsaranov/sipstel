@@ -24,7 +24,7 @@ Install
     wget https://github.com/pjsip/pjproject/archive/refs/tags/2.14.1.zip
     unzip 2.14.1.zip
     cd pjproject-2.14.1
-    ./configure CFLAGS="-fPIC" --prefix=/usr --enable-shared --disable-video --disable-sound --disable-ffmpeg --disable-sdl --disable-gsm-codec --disable-speex-codec --disable-speex-aec --disable-ilbc-codec --disable-v4l2 --disable-libwebrtc --disable-opus --disable-silk
+    ./configure CFLAGS="-fPIC" --prefix=/usr --enable-shared --disable-video --disable-sound --disable-ffmpeg --disable-sdl --disable-gsm-codec --disable-speex-codec --disable-speex-aec --disable-v4l2 --disable-libwebrtc --disable-opus --disable-silk
     make dep
     make
     make install
