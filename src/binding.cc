@@ -784,6 +784,25 @@ static NAN_METHOD(EPStart) {
   }
   info.GetReturnValue().SetUndefined();
 }
+
+static NAN_METHOD(EPDestroy) {
+  Nan::HandleScope scope;
+
+  if (!ep_create)
+    return Nan::ThrowError("Not created");
+
+  try {
+    ep->libDestroy();
+    ep_start = false;
+    ep_init = false;
+    ep_create = false;
+  } catch(Error& err) {
+    string errstr = "libDestroy error: " + err.info();
+    return Nan::ThrowError(errstr.c_str());
+  }
+  info.GetReturnValue().SetUndefined();
+}
+
 static NAN_METHOD(EPGetDevices) {
   Nan::HandleScope scope;
   AudioDevInfoVector2  devices;
@@ -1003,6 +1022,9 @@ extern "C" {
     Nan::Set(target,
              Nan::New("start").ToLocalChecked(),
              Nan::New<FunctionTemplate>(EPStart)->GetFunction(context).ToLocalChecked());
+    Nan::Set(target,
+             Nan::New("destroy").ToLocalChecked(),
+             Nan::New<FunctionTemplate>(EPDestroy)->GetFunction(context).ToLocalChecked());
     Nan::Set(target,
              Nan::New("hangupAllCalls").ToLocalChecked(),
              Nan::New<FunctionTemplate>(EPHangupAllCalls)->GetFunction(context).ToLocalChecked());
